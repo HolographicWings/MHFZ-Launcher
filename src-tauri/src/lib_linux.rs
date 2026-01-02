@@ -3,7 +3,7 @@ use std::process::{Command, Stdio};
 use std::env;
 use std::fs::OpenOptions;
 use std::io::Write;
-use log::{info, debug, error};
+use log::{info, debug, error, warn};
 use mhf_iel::MhfConfig;
 
 #[derive(Debug)]
@@ -62,20 +62,29 @@ fn install_japanese_fonts(game_folder: &std::path::Path, wineprefix: &str) {
     let fonts_source = game_folder.join("fonts");
     if !fonts_source.exists() {
         log_to_file("⚠️  fonts/ folder not found, skipping font installation");
+        warn!("fonts/ folder not found in game directory, skipping font installation");
         return;
     }
 
+    // Crea cartella Fonts
     let fonts_dest = std::path::Path::new(wineprefix)
     .join("drive_c/windows/Fonts");
-
     if !fonts_dest.exists() {
-        let _ = std::fs::create_dir_all(&fonts_dest);
+        log_to_file("🔧 Creating Fonts directory manually...");
+        if let Err(e) = std::fs::create_dir_all(&fonts_dest) {
+            log_to_file(&format!("❌ Failed to create Fonts directory: {}", e));
+            error!("Failed to create Fonts directory: {}", e);
+            return;
+        }
+        log_to_file(&format!("✅ Created: {:?}", fonts_dest));
     }
 
     log_to_file("🔤 Installing Japanese fonts...");
     info!("Installing Japanese fonts from fonts/ folder...");
 
     let mut count = 0;
+    let mut font_names = Vec::new();
+
     if let Ok(entries) = std::fs::read_dir(&fonts_source) {
         for entry in entries.flatten() {
             let path = entry.path();
@@ -86,10 +95,11 @@ fn install_japanese_fonts(game_folder: &std::path::Path, wineprefix: &str) {
                         let dest = fonts_dest.join(filename);
                         match std::fs::copy(&path, &dest) {
                             Ok(_) => {
-                                log_to_file(&format!("   ✅ Installed: {:?}", filename));
+                                log_to_file(&format!("  ✅ Installed: {:?}", filename));
+                                font_names.push(filename.to_string_lossy().to_string());
                                 count += 1;
                             }
-                            Err(e) => log_to_file(&format!("   ❌ Failed to copy {:?}: {}", filename, e)),
+                            Err(e) => log_to_file(&format!("  ❌ Failed to copy {:?}: {}", filename, e)),
                         }
                     }
                 }
@@ -99,14 +109,73 @@ fn install_japanese_fonts(game_folder: &std::path::Path, wineprefix: &str) {
 
     log_to_file(&format!("✅ Japanese fonts installed ({} files)", count));
     info!("Japanese fonts installation complete ({} files)", count);
+
+    // ✅ REGISTRA I FONT NEL REGISTRO WINE!
+    if count > 0 {
+        log_to_file("📝 Registering fonts in Wine registry...");
+        register_fonts_in_wine(wineprefix, &font_names);
+    }
 }
+
+/// Registra i font nel registro Wine
+fn register_fonts_in_wine(wineprefix: &str, font_files: &[String]) {
+    let (wine_cmd, wine_args) = get_wine_command();
+
+    for font_file in font_files {
+        let font_name = if font_file.contains("gothic") {
+            "MS Gothic & MS PGothic & MS UI Gothic (TrueType)"
+        } else if font_file.contains("mincho") {
+            "MS Mincho (TrueType)"
+        } else if font_file.contains("meiryo") {
+            "Meiryo (TrueType)"
+        } else if font_file.contains("source") || font_file.contains("han") {
+            "Source Han Sans (TrueType)"
+        } else {
+            continue; // Salta font non riconosciuti
+        };
+
+        log_to_file(&format!("  Registering: {} → {}", font_name, font_file));
+
+        let mut reg_cmd = Command::new(&wine_cmd);
+        for arg in &wine_args {
+            reg_cmd.arg(arg);
+        }
+
+        if is_steamos() {
+            reg_cmd.arg(format!("--env=WINEPREFIX={}", wineprefix));
+            reg_cmd.arg("--command=wine");
+            reg_cmd.arg("org.winehq.Wine");
+        }
+
+        let _ = reg_cmd
+        .arg("reg")
+        .arg("add")
+        .arg("HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Fonts")
+        .arg("/v")
+        .arg(font_name)
+        .arg("/t")
+        .arg("REG_SZ")
+        .arg("/d")
+        .arg(font_file)
+        .arg("/f")
+        .env("WINEPREFIX", wineprefix)
+        .env("WINEDEBUG", "-all")
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status();
+    }
+
+    log_to_file("✅ Fonts registered in Wine registry");
+}
+
 
 pub fn run_linux(cfg: MhfConfigLinux) -> std::io::Result<()> {
     log_to_file("════════════════════════════════════════════════════");
     log_to_file("🎮 Monster Hunter Frontier Z - Linux Launcher");
     log_to_file("════════════════════════════════════════════════════");
-    info!("=== Monster Hunter Frontier - Linux Launcher ===");
 
+    info!("=== Monster Hunter Frontier - Linux Launcher ===");
     debug!("Game folder: {:?}", cfg.game_folder);
     log_to_file(&format!("📁 Game folder: {:?}", cfg.game_folder));
 
@@ -218,55 +287,42 @@ pub fn run_linux(cfg: MhfConfigLinux) -> std::io::Result<()> {
     // Ottieni comando Wine
     let (wine_cmd, wine_args) = get_wine_command();
 
-    // ✅ FIX: Verifica se il prefix è GIÀ CONFIGURATO
+    // ✅ Controlla se il prefix esiste
     let prefix_path = std::path::Path::new(&wineprefix);
     let system_reg = prefix_path.join("system.reg");
-    let user_reg = prefix_path.join("user.reg");
-    let msgothic = prefix_path.join("drive_c/windows/Fonts/msgothic.ttc");
 
-    // ✅ CHECK 1: Prefix preconfigurato con registry + font
-    if system_reg.exists() && user_reg.exists() && msgothic.exists() {
-        log_to_file("✅ Wine prefix is PRECONFIGURED with registry and Japanese fonts");
-        log_to_file("   → Skipping wineboot initialization");
-        info!("✅ Wine prefix already configured, skipping initialization");
-    }
-    // ✅ CHECK 2: Prefix esiste ma incompleto (registry presente, font mancanti)
-    else if system_reg.exists() && user_reg.exists() && !msgothic.exists() {
-        log_to_file("⚠️  Wine prefix has registry but missing Japanese fonts");
-        log_to_file("   → Installing fonts only (no wineboot)");
-        install_japanese_fonts(&cfg.game_folder, &wineprefix);
-    }
-    // ✅ CHECK 3: Prefix NON configurato (manca registry)
-    else {
+    let need_init = !prefix_path.exists() || !system_reg.exists();
+
+    if need_init {
         if prefix_path.exists() {
-            log_to_file("⚠️  Wine prefix folder exists but incomplete (missing registry)");
+            log_to_file("⚠️  Wine prefix folder exists but incomplete (missing system.reg)");
+            warn!("Wine prefix exists but incomplete, re-initializing...");
         } else {
             log_to_file("🔧 First launch detected - Wine prefix does not exist");
+            info!("Creating Wine prefix (this may take 1-2 minutes on first launch)...");
         }
 
-        info!("Creating Wine prefix (this may take 1-2 minutes on first launch)...");
         let _ = std::fs::create_dir_all(&wineprefix);
-        log_to_file("⏳ Running wineboot --init...");
+        log_to_file("⏳ Running wineboot --init (this may take 1-2 minutes on SteamOS)...");
 
-        let status = if is_steamos() {
-            // ✅ Wine Flatpak: usa --command=wineboot
+        // ✅ FIX: Cattura stderr per debug
+        let output = if is_steamos() {
             Command::new("flatpak")
             .arg("run")
+            .arg(format!("--env=WINEPREFIX={}", &wineprefix))  // ← COSÌ!
+            .arg(format!("--env=WINEDEBUG=-all"))
+            .arg(format!("--env=WINEDLLOVERRIDES=winemenubuilder.exe=d"))
             .arg("--command=wineboot")
             .arg("org.winehq.Wine")
             .arg("--init")
-            .env("WINEPREFIX", &wineprefix)
             .env("FONTCONFIG_PATH", &fontconfig_path)
             .env("FONTCONFIG_FILE", &fontconfig_file)
             .env("XDG_DATA_DIRS", &xdg_data_dirs)
             .env("WINEDLLOVERRIDES", "winemenubuilder.exe=d")
             .env("WINEDEBUG", "-all")
             .stdin(Stdio::null())
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
-            .status()
+            .output()
         } else {
-            // ✅ Linux standard: wineboot normale
             Command::new("wineboot")
             .arg("--init")
             .env("WINEPREFIX", &wineprefix)
@@ -276,26 +332,46 @@ pub fn run_linux(cfg: MhfConfigLinux) -> std::io::Result<()> {
             .env("WINEDLLOVERRIDES", "winemenubuilder.exe=d")
             .env("WINEDEBUG", "-all")
             .stdin(Stdio::null())
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
-            .status()
+            .output()
         };
 
-        match status {
-            Ok(s) if s.success() => {
-                log_to_file("✅ Wine prefix created successfully");
-                info!("Wine prefix created successfully");
-                install_japanese_fonts(&cfg.game_folder, &wineprefix);
-            }
-            Ok(s) => {
-                log_to_file(&format!("⚠️ wineboot exited with status: {}", s));
-                error!("wineboot failed with status: {}", s);
+        match output {
+            Ok(out) => {
+                if out.status.success() {
+                    log_to_file("✅ wineboot --init completed successfully");
+                    info!("Wine prefix initialized successfully");
+                } else {
+                    log_to_file(&format!("⚠️  wineboot exited with status: {}", out.status));
+                    log_to_file(&format!("   stderr: {}", String::from_utf8_lossy(&out.stderr)));
+                    warn!("wineboot exited with non-zero status but continuing");
+                }
+
+                // ✅ FIX CRITICO: Attendi di più su SteamOS (10 secondi)
+                log_to_file("⏳ Waiting for Wine initialization to complete...");
+                let wait_time = if is_steamos() { 10 } else { 3 };
+                log_to_file(&format!("   Waiting {} seconds...", wait_time));
+                std::thread::sleep(std::time::Duration::from_secs(wait_time));
+
+                // Verifica system.reg (solo per info, non blocchiamo più)
+                if system_reg.exists() {
+                    log_to_file("✅ Wine prefix created successfully (system.reg found)");
+                } else {
+                    log_to_file("⚠️  system.reg not found yet, but continuing anyway");
+                    log_to_file("   (Wine Flatpak may take longer to finish initialization)");
+                }
             }
             Err(e) => {
                 log_to_file(&format!("❌ Failed to run wineboot: {}", e));
                 error!("Failed to run wineboot: {}", e);
             }
         }
+
+        // ✅ FIX: Installa i font SEMPRE, anche se system.reg manca
+        install_japanese_fonts(&cfg.game_folder, &wineprefix);
+
+    } else {
+        log_to_file("✅ Wine prefix already exists and configured");
+        info!("✅ Wine prefix already configured");
     }
 
     // XAUTHORITY
@@ -303,11 +379,10 @@ pub fn run_linux(cfg: MhfConfigLinux) -> std::io::Result<()> {
         let home = env::var("HOME").unwrap_or_else(|_| "/tmp".to_string());
         format!("{}/.Xauthority", home)
     });
-
     log_to_file(&format!("🖥️  XAUTHORITY: {}", xauthority));
 
     // Inizializza wineserver
-    debug!("Initializing Wine prefix...");
+    debug!("Initializing wineserver...");
     log_to_file("🔧 Initializing wineserver...");
 
     let mut server_cmd = if is_steamos() {
