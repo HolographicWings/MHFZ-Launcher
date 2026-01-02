@@ -88,3 +88,5 @@ game/
 
 #backup old file
 .backup-old-scripts
+src-tauri/mhf-iel-master.backup/
+

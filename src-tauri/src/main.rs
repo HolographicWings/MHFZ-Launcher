@@ -1287,6 +1287,7 @@ fn main() {
                     .iter()
                     .map(Into::into)
                     .collect(),
+                    font_name: Some("MS Gothic".to_string()),
                     server_host: state_sync.current_endpoint.host(),
                     server_port: state_sync.current_endpoint.game_port.unwrap_or(53310) as u32,
                     entrance_count: auth_resp.entrance_count,
