@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# MHFZ Launcher - Wrapper per SteamOS/Linux
+
+SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Verifica se webkit2gtk è installato
+if ! ldconfig -p | grep -q libwebkit2gtk-4.0.so; then
+    # Mostra errore user-friendly
+    zenity --error --width=400 --title="MHFZ Launcher - Dipendenze Mancanti" \
+        --text="webkit2gtk non è installato!\n\nEsegui prima:\n./install-deps-steamos.sh\n\ndalla cartella del launcher." 2>/dev/null || \
+    echo "ERRORE: webkit2gtk non trovato! Esegui: ./install-deps-steamos.sh"
+    exit 1
+fi
+
+# ✅ Imposta variabili ambiente complete
+export FONTCONFIG_PATH="${FONTCONFIG_PATH:-/etc/fonts}"
+export FONTCONFIG_FILE="${FONTCONFIG_FILE:-/etc/fonts/fonts.conf}"
+export XDG_DATA_DIRS="${XDG_DATA_DIRS:-/usr/share:/usr/local/share}"
+export XAUTHORITY="${XAUTHORITY:-$HOME/.Xauthority}"
+export WEBKIT_DISABLE_COMPOSITING_MODE=1
+export WEBKIT_DISABLE_DMABUF_RENDERER=1
+
+# Lancia il binario
+exec "$SELF_DIR/mhfz-launcher.bin" "$@"

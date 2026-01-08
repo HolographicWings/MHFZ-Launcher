@@ -88,5 +88,6 @@ game/
 
 #backup old file
 .backup-old-scripts
-src-tauri/mhf-iel-master.backup/
-
+src-tauri/dat/
+src-tauri/ButterClient/
+src-tauri/ButterVersion.txt
