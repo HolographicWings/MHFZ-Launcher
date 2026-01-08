@@ -2,7 +2,7 @@
 
 # ═══════════════════════════════════════════════════════════════════
 # MHFZ Launcher - Dependency Installation for SteamOS
-# Version: 2.0 (con Wine Flatpak)
+# Version: 2.1 (con Wine Flatpak + Font check)
 # ═══════════════════════════════════════════════════════════════════
 
 # Colors
@@ -27,7 +27,7 @@ WARN="${YELLOW}⚠${NC}"
 # Banner
 clear
 echo -e "${CYAN}╔══════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${CYAN}║${NC} ${BOLD}${WHITE}MHFZ Launcher - SteamOS Dependency Installation v2.0${NC} ${CYAN}║${NC}"
+echo -e "${CYAN}║${NC} ${BOLD}${WHITE}MHFZ Launcher - SteamOS Dependency Installation v2.1${NC} ${CYAN}║${NC}"
 echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}"
 echo ""
 echo -e "${WHITE}This script will install:${NC}"
@@ -38,6 +38,7 @@ echo ""
 # ═══════════════════════════════════════════════════════════════════
 # STEP 1: Password Check
 # ═══════════════════════════════════════════════════════════════════
+
 echo -e "${CYAN}╔═══════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${CYAN}║${NC} ${BOLD}STEP 1/6${NC} - Administrator Password ${CYAN}║${NC}"
 echo -e "${CYAN}╚═══════════════════════════════════════════════════════════════╝${NC}"
@@ -68,12 +69,13 @@ clear
 # ═══════════════════════════════════════════════════════════════════
 # STEP 2: Filesystem Unlock
 # ═══════════════════════════════════════════════════════════════════
+
 echo -e "${CYAN}╔═══════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${CYAN}║${NC} ${BOLD}STEP 2/6${NC} - Unlock Filesystem ${CYAN}║${NC}"
 echo -e "${CYAN}╚═══════════════════════════════════════════════════════════════╝${NC}"
 echo ""
-echo -e "${BLUE}${BOLD}Running: sudo steamos-readonly disable${NC}"
 
+echo -e "${BLUE}${BOLD}Running: sudo steamos-readonly disable${NC}"
 if sudo steamos-readonly disable; then
     echo -e "${CHECK} ${GREEN}Filesystem unlocked${NC}"
 else
@@ -88,6 +90,7 @@ clear
 # ═══════════════════════════════════════════════════════════════════
 # STEP 3: Initialize Keys
 # ═══════════════════════════════════════════════════════════════════
+
 echo -e "${CYAN}╔═══════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${CYAN}║${NC} ${BOLD}STEP 3/6${NC} - Initialize Package Keys ${CYAN}║${NC}"
 echo -e "${CYAN}╚═══════════════════════════════════════════════════════════════╝${NC}"
@@ -112,19 +115,21 @@ clear
 # ═══════════════════════════════════════════════════════════════════
 # STEP 4: Install webkit2gtk
 # ═══════════════════════════════════════════════════════════════════
+
 echo -e "${CYAN}╔═══════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${CYAN}║${NC} ${BOLD}STEP 4/6${NC} - Install webkit2gtk ${CYAN}║${NC}"
 echo -e "${CYAN}╚═══════════════════════════════════════════════════════════════╝${NC}"
 echo ""
-echo -e "${BLUE}${BOLD}Running: sudo pacman -Sy --needed --noconfirm webkit2gtk${NC}"
 
+echo -e "${BLUE}${BOLD}Running: sudo pacman -Sy --needed --noconfirm webkit2gtk${NC}"
 if sudo pacman -Sy --needed --noconfirm webkit2gtk; then
     echo -e "${CHECK} ${GREEN}webkit2gtk installed${NC}"
 else
     echo -e "${CROSS} ${RED}Installation failed${NC}"
     exit 1
 fi
-# Dopo STEP 4 (webkit2gtk), aggiungi:
+
+# Verifica fontconfig
 echo ""
 echo -e "${BLUE}Verifying fontconfig...${NC}"
 if command -v fc-list >/dev/null 2>&1; then
@@ -132,6 +137,7 @@ if command -v fc-list >/dev/null 2>&1; then
 else
     echo -e "${WARN} ${YELLOW}fontconfig not found (may be needed)${NC}"
 fi
+
 echo ""
 read -p "$(echo -e ${CYAN}Press ENTER...${NC})" dummy
 clear
@@ -139,6 +145,7 @@ clear
 # ═══════════════════════════════════════════════════════════════════
 # STEP 5: Install Wine Flatpak
 # ═══════════════════════════════════════════════════════════════════
+
 echo -e "${CYAN}╔═══════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${CYAN}║${NC} ${BOLD}STEP 5/6${NC} - Install Wine Flatpak ${CYAN}║${NC}"
 echo -e "${CYAN}╚═══════════════════════════════════════════════════════════════╝${NC}"
@@ -172,12 +179,13 @@ clear
 # ═══════════════════════════════════════════════════════════════════
 # STEP 6: Lock Filesystem
 # ═══════════════════════════════════════════════════════════════════
+
 echo -e "${CYAN}╔═══════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${CYAN}║${NC} ${BOLD}STEP 6/6${NC} - Lock Filesystem ${CYAN}║${NC}"
 echo -e "${CYAN}╚═══════════════════════════════════════════════════════════════╝${NC}"
 echo ""
-echo -e "${BLUE}${BOLD}Running: sudo steamos-readonly enable${NC}"
 
+echo -e "${BLUE}${BOLD}Running: sudo steamos-readonly enable${NC}"
 if sudo steamos-readonly enable; then
     echo -e "${CHECK} ${GREEN}Filesystem locked${NC}"
 else
@@ -192,23 +200,43 @@ clear
 # ═══════════════════════════════════════════════════════════════════
 # INSTALLATION COMPLETE
 # ═══════════════════════════════════════════════════════════════════
+
 echo -e "${GREEN}╔═══════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${GREEN}║${NC} ${BOLD}${WHITE}✓ INSTALLATION COMPLETED!${NC} ${GREEN}║${NC}"
 echo -e "${GREEN}╚═══════════════════════════════════════════════════════════════╝${NC}"
 echo ""
+
 echo -e "${WHITE}${BOLD}Installed:${NC}"
 echo -e " ${CHECK} ${WHITE}webkit2gtk (launcher GUI)${NC}"
 echo -e " ${CHECK} ${WHITE}Wine Flatpak stable-25.08 (game runtime)${NC}"
 echo ""
+
+echo -e "${CYAN}${BOLD}Next steps:${NC}"
+echo -e " ${MAGENTA}1.${NC} ${WHITE}Place game files in ${BOLD}/home/deck/MHFZ/${NC}"
+echo -e " ${MAGENTA}2.${NC} ${WHITE}Create ${BOLD}Font/${NC} folder inside game directory${NC}"
+echo -e " ${MAGENTA}3.${NC} ${WHITE}Copy ${BOLD}msgothic.ttc${NC} and ${BOLD}MS Gothic.ttf${NC} to Font/${NC}"
+echo -e " ${MAGENTA}4.${NC} ${WHITE}Run: ${BOLD}./mhfz-launcher${NC}"
+echo ""
+
+echo -e "${YELLOW}${BOLD}⚠️  IMPORTANT - Font Configuration:${NC}"
+echo -e " ${ARROW} ${WHITE}The launcher requires ${BOLD}ONLY 2 font files${NC}${WHITE}:${NC}"
+echo -e "    ${BOLD}msgothic.ttc${NC} and ${BOLD}MS Gothic.ttf${NC}"
+echo -e " ${ARROW} ${WHITE}Too many fonts (13+) will ${BOLD}BREAK${NC}${WHITE} Japanese text!${NC}"
+echo -e " ${ARROW} ${WHITE}Remove all other fonts (NotoSans, Meiryo, etc.)${NC}"
+echo ""
+
 echo -e "${CYAN}${BOLD}How to launch:${NC}"
-echo -e " ${MAGENTA}1.${NC} ${WHITE}Run: ${BOLD}./mhfz-launcher${NC}"
-echo -e " ${MAGENTA}2.${NC} ${WHITE}Or add to Steam as Non-Steam Game${NC}"
+echo -e " ${MAGENTA}Option A:${NC} ${WHITE}Run: ${BOLD}./mhfz-launcher${NC}"
+echo -e " ${MAGENTA}Option B:${NC} ${WHITE}Add to Steam as Non-Steam Game${NC}"
 echo ""
+
 echo -e "${CYAN}${BOLD}Technical notes:${NC}"
-echo -e " ${ARROW} ${WHITE}Wine prefix will be auto-created on first game launch${NC}"
-echo -e " ${ARROW} ${WHITE}Location: ${BOLD}<game_folder>/pfx${NC}"
-echo -e " ${ARROW} ${WHITE}First launch may take 1-2 minutes${NC}"
+echo -e " ${ARROW} ${WHITE}Wine prefix: ${BOLD}/home/deck/MHFZ/pfx${NC}"
+echo -e " ${ARROW} ${WHITE}First launch: 1-2 minutes (prefix initialization)${NC}"
+echo -e " ${ARROW} ${WHITE}Flatpak permissions: auto-configured by launcher${NC}"
+echo -e " ${ARROW} ${WHITE}Logs: ${BOLD}~/mhfz-launcher.log${NC}"
 echo ""
+
 echo -e "${GRAY}═══════════════════════════════════════════════════════════════${NC}"
 echo -e "${STAR} ${YELLOW}Happy hunting in Monster Hunter Frontier Z!${NC} ${STAR}"
 echo -e "${GRAY}═══════════════════════════════════════════════════════════════${NC}"
