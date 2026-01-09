@@ -314,6 +314,21 @@ pub fn run_linux(cfg: MhfConfigLinux) -> std::io::Result<()> {
     info!("✅ config.json written");
     log_to_file(&format!("✅ config.json written to: {:?}", config_path));
 
+    // ✅ NUOVO: Installa XInputPlus
+    log_to_file("🎮 Setting up XInputPlus for controller support...");
+    info!("🎮 Setting up XInputPlus...");
+    match crate::xinput::setup_xinputplus(&cfg.game_folder) {
+        Ok(_) => {
+            log_to_file("✅ XInputPlus configured successfully");
+            info!("✅ XInputPlus configured successfully");
+        }
+        Err(e) => {
+            log_to_file(&format!("⚠️ XInputPlus setup failed: {}", e));
+            warn!("XInputPlus setup failed, controller may not work properly: {}", e);
+            // Non blocchiamo il lancio del gioco
+        }
+    }
+
     // Cerca exe
     let mut mhf_iel_exe = cfg.game_folder.join("mhf-iel.exe");
     let mut exe_name = "mhf-iel.exe";
@@ -514,6 +529,10 @@ pub fn run_linux(cfg: MhfConfigLinux) -> std::io::Result<()> {
     game_cmd.env("FONTCONFIG_FILE", &fontconfig_file);
     game_cmd.env("XDG_DATA_DIRS", &xdg_data_dirs);
     game_cmd.env("XAUTHORITY", &xauthority);
+    game_cmd.env("WINEDLLOVERRIDES", "xinput1_3=n,b;dinput=n,b;dinput8=n,b;winemenubuilder.exe=d");
+    log_to_file("🔧 Wine DLL overrides configured for XInputPlus");
+    log_to_file("   xinput1_3=n,b;dinput=n,b;dinput8=n,b");
+
     game_cmd.stdin(Stdio::null());
     game_cmd.stdout(Stdio::null());
     game_cmd.stderr(Stdio::null());

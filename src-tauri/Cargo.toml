@@ -11,6 +11,11 @@ rust-version = "1.57"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[package.metadata.tauri.bundle]
+resources = [
+    "resources/xinputplus/*"
+]
+
 [build-dependencies]
 tauri-build = { version = "1.5", features = [] }
 
