@@ -11,11 +11,6 @@ rust-version = "1.57"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[package.metadata.tauri.bundle]
-resources = [
-    "resources/xinputplus/*"
-]
-
 [build-dependencies]
 tauri-build = { version = "1.5", features = [] }
 
@@ -33,7 +28,6 @@ tauri = { version = "1.5", features = ["api-all"] }
 tauri-plugin-store = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1" }
 tauri-plugin-log = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1" }
 dirs = "5"
-chrono = "0.4"
 
 # mhf-iel = { git = "https://github.com/rockisch/mhf-iel.git", rev = "dc7a4a982a5d3263bb2859a46ebb7ba9ab198f69" }
 mhf-iel = { path = "./mhf-iel-master" }
@@ -52,6 +46,7 @@ default = ["custom-protocol"]
 custom-protocol = ["tauri/custom-protocol"]
 
 [patch.crates-io]
+wry = { path = "../wry-patch" }
 
 [build]
 target = "i686-pc-windows-msvc"

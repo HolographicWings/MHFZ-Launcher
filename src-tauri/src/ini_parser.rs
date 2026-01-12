@@ -9,7 +9,7 @@ use std::path::Path;
 const LINE_ENDING: &str = "\r\n";
 
 #[cfg(not(target_os = "windows"))]
-const LINE_ENDING: &str = "\n";
+// const LINE_ENDING: &str = "\n";
 
 #[derive(Debug, Clone)]
 pub struct IniFile {
@@ -124,6 +124,7 @@ impl IniFile {
     }
 
     /// Debug helper
+    #[allow(dead_code)]
     pub fn dump(&self) -> String {
         let mut result = String::new();
         result.push_str(&format!("Line ending: {:?}\n", self.line_ending));
