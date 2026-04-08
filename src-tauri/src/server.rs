@@ -152,6 +152,7 @@ pub struct AuthResponse {
 	#[serde(default, deserialize_with = "null_default")]
 	pub friends: Vec<FriendData>,
     pub patch_server: String,
+    pub entrance_host: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
