@@ -769,8 +769,9 @@ async fn select_character(
 
     info!("🔵 [SELECT_CHAR] Checking critical files...");
     if !mhf_ini.exists() {
-        error!("❌ [SELECT_CHAR] mhf.ini NOT FOUND at: {:?}", mhf_ini);
-        return Err("game-files-missing: mhf.ini not found".into());
+		info!("📝 [SELECT_CHAR] mhf.ini missing, creating default file...");
+		settings::create_default_ini(&mhf_ini)
+			.map_err(|e| format!("game-files-missing: {}", e))?;
     }
     info!("✅ [SELECT_CHAR] mhf.ini exists");
 
@@ -1265,9 +1266,11 @@ fn main() {
                 // ✅ VERIFICA FINALE FILES CRITICI
                 let mhf_ini = game_folder.join("mhf.ini");
                 if !mhf_ini.exists() {
-                    error!("❌ [GAME_START] CRITICAL: mhf.ini missing at {:?}", mhf_ini);
-                    error!("❌ [GAME_START] Game cannot start without mhf.ini!");
-                    break; // Non avviare il gioco
+					info!("📝 [GAME_START] mhf.ini missing, creating default file...");
+					if let Err(e) = settings::create_default_ini(&mhf_ini) {
+						error!("❌ [GAME_START] Failed to create mhf.ini: {}", e);
+						break;
+					}
                 }
                 info!("✅ [GAME_START] mhf.ini verified");
 

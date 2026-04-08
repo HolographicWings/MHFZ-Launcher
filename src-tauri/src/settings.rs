@@ -32,17 +32,6 @@ fn find_ini_file(folder: &Path) -> PathBuf {
         return default;
     }
 
-    // Altrimenti cerca qualsiasi .ini
-    if let Ok(entries) = fs::read_dir(folder) {
-        for entry in entries.flatten() {
-            let p = entry.path();
-            if p.extension().map_or(false, |ext| ext == "ini") {
-                log::info!("📄 Trovato file INI alternativo: {:?}", p);
-                return p;
-            }
-        }
-    }
-
     // Se non trova niente, ritorna il default (verrà creato)
     log::warn!("⚠️ Nessun file INI trovato, verrà creato: {:?}", default);
     default
@@ -178,7 +167,7 @@ pub fn set_setting(
 }
 
 /// Crea un file INI con valori di default minimi
-fn create_default_ini(path: &PathBuf) -> Result<(), String> {
+pub fn create_default_ini(path: &PathBuf) -> Result<(), String> {
     let default_content = "\
 [SCREEN]
 FULLSCREEN_MODE=0
