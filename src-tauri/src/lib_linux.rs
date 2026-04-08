@@ -314,21 +314,6 @@ pub fn run_linux(cfg: MhfConfigLinux) -> std::io::Result<()> {
     info!("✅ config.json written");
     log_to_file(&format!("✅ config.json written to: {:?}", config_path));
 
-    // ✅ NUOVO: Installa XInputPlus
-    log_to_file("🎮 Setting up XInputPlus for controller support...");
-    info!("🎮 Setting up XInputPlus...");
-    match crate::xinput::setup_xinputplus(&cfg.game_folder) {
-        Ok(_) => {
-            log_to_file("✅ XInputPlus configured successfully");
-            info!("✅ XInputPlus configured successfully");
-        }
-        Err(e) => {
-            log_to_file(&format!("⚠️ XInputPlus setup failed: {}", e));
-            warn!("XInputPlus setup failed, controller may not work properly: {}", e);
-            // Non blocchiamo il lancio del gioco
-        }
-    }
-
     // Cerca exe
     let mut mhf_iel_exe = cfg.game_folder.join("mhf-iel.exe");
     let mut exe_name = "mhf-iel.exe";

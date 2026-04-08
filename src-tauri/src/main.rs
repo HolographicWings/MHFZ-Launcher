@@ -14,7 +14,6 @@ mod settings;
 mod store;
 mod user;
 mod manifest;
-mod xinput;
 
 #[cfg(target_os = "linux")]
 mod lib_linux;
@@ -1336,22 +1335,6 @@ fn main() {
             #[cfg(target_os = "windows")]
             {
                 info!("🎮 [GAME_START] Launching Windows game...");
-
-                // ✅ NUOVO: Installa XInputPlus prima di lanciare il gioco
-                let game_folder = config.mhf_folder.clone()
-                .unwrap_or_else(|| std::env::current_dir().unwrap());
-
-                info!("🎮 [GAME_START] Setting up XInputPlus...");
-                match crate::xinput::setup_xinputplus(&game_folder) {
-                    Ok(_) => {
-                        info!("✅ [GAME_START] XInputPlus configured successfully");
-                    }
-                    Err(e) => {
-                        warn!("⚠️ [GAME_START] XInputPlus setup failed: {}", e);
-                        warn!("   Controller may not work properly");
-                        // Non blocchiamo il lancio del gioco
-                    }
-                }
 
                 match mhf_iel::run(config) {
                     Ok(exit_code) => {
