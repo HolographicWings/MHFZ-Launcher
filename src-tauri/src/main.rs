@@ -1038,6 +1038,15 @@ impl From<&server::FriendData> for mhf_iel::FriendData {
     }
 }
 fn main() {
+    #[cfg(target_os = "windows")]
+    unsafe {
+        use windows::Win32::UI::HiDpi::{
+            SetProcessDpiAwarenessContext,
+            DPI_AWARENESS_CONTEXT_UNAWARE_GDISCALED
+        };
+
+        let _ = SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_UNAWARE_GDISCALED);
+    }
     // ✅ CRITICAL FIX: Forza variabili fontconfig PRIMA di inizializzare Tauri
     #[cfg(target_os = "linux")]
     {

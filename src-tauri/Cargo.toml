@@ -41,7 +41,10 @@ mhf-iel = { path = "./mhf-iel-master" }
 
 [dependencies.windows]
 version = "0.52"
-features = ["Win32_System_WindowsProgramming"]
+features = [
+	"Win32_System_WindowsProgramming",
+	"Win32_UI_HiDpi"
+]
 
 [features]
 # by default Tauri runs in production mode
